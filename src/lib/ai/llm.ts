@@ -12,12 +12,12 @@ function createGroqClient() {
 
 export function getLanguageModel() {
     const groq = createGroqClient();
-    const modelId = process.env.GROQ_MODEL ?? "openai/gpt-oss-20b";
+    const modelId = process.env.GROQ_MODEL ?? "openai/gpt-oss-120b";
     return groq(modelId);
 }
 
 export function getStructuredLanguageModel() {
     const groq = createGroqClient();
-    const modelId = process.env.GROQ_STRUCTURED_MODEL ?? "openai/gpt-oss-20b";
+    const modelId = process.env.GROQ_STRUCTURED_MODEL ?? "openai/gpt-oss-120b";
     return groq(modelId);
 }
