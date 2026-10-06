@@ -41,3 +41,8 @@ yarn-error.log*
 next-env.d.ts
 .prettierrc
 /src/generated/prisma
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+.data

@@ -5,6 +5,19 @@ const nextConfig: NextConfig = {
     typescript: {
         ignoreBuildErrors: true,
     },
+    serverExternalPackages: [
+        "tree-sitter",
+        "tree-sitter-javascript",
+        "tree-sitter-typescript",
+        "@xenova/transformers",
+        "onnxruntime-node",
+        "sharp",
+    ],
+    experimental: {
+        serverActions: {
+            bodySizeLimit: "110mb",
+        },
+    },
 };
 
 export default nextConfig;

@@ -1,0 +1,26 @@
+"use client";
+
+import { retryProjectKnowledge, RetryState } from "@/lib/actions/analysis";
+import { useActionState } from "react";
+import { Button } from "../ui/button";
+
+const initialState: RetryState = {};
+
+export function RetryKnowledgeButton({ projectId }: { projectId: string }) {
+    const [state, formAction, pending] = useActionState(
+        retryProjectKnowledge,
+        initialState,
+    );
+
+    return (
+        <form action={formAction} className="space-y-2">
+            <input type="hidden" name="projectId" value={projectId} />
+            {state.error ? (
+                <p className="text-sm text-destructive">{state.error}</p>
+            ) : null}
+            <Button type="submit" disabled={pending}>
+                {pending ? "Rebuilding Knowledge..." : "Retry Knowledge Build"}
+            </Button>
+        </form>
+    );
+}
