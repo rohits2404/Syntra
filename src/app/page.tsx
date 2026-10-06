@@ -1,15 +1,8 @@
-import { ThemeToggle } from "@/components/theme-toggle";
-import { Button } from "@/components/ui/button";
+import { LandingPage } from "@/components/landing";
 import React from "react";
 
 const Home = () => {
-    return (
-        <div>
-            <h1>Home</h1>
-            <Button>Click Me</Button>
-            <ThemeToggle />
-        </div>
-    );
+    return <LandingPage />;
 };
 
 export default Home;
