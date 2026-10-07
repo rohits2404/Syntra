@@ -7,7 +7,11 @@
         "build": "next build",
         "start": "next start",
         "lint": "eslint",
-        "tunnel": "ngrok http --domain=insect-enhanced-simply.ngrok-free.app 3000"
+        "test": "vitest run",
+        "test:watch": "vitest",
+        "test:e2e": "playwright test",
+        "test:e2e:ui": "playwright test --ui",
+        "postinstall": "prisma generate"
     },
     "dependencies": {
         "@ai-sdk/groq": "^4.0.55",
@@ -41,6 +45,7 @@
         "zod": "^4.6.5"
     },
     "devDependencies": {
+        "@playwright/test": "^1.63.0",
         "@tailwindcss/postcss": "^4",
         "@types/node": "^20",
         "@types/pg": "^8.23.1",
@@ -52,7 +57,9 @@
         "prisma": "^7.10.0",
         "tailwindcss": "^4",
         "tsx": "^4.23.15",
-        "typescript": "^5"
+        "typescript": "^5",
+        "vite": "^8.3.3",
+        "vitest": "^5.0.3"
     },
     "allowScripts": {
         "sharp@0.32.6": true
