@@ -1,19 +1,24 @@
 "use server";
 
-import { redirect } from "next/navigation";
-import { auth } from "../auth";
-import { prisma } from "../db";
-import { setProjectProgress } from "../analysis/progress";
-import { downloadGitHubZipball } from "../github";
-import { MAX_REPO_SIZE_BYTES } from "../limits";
-import { extractFromZipBuffer } from "../files/extract";
-import { detectFramework } from "../files/framework";
-import { isSourceFile } from "../files/filters";
-import { deleteProjectFiles, persistProjectFiles } from "../files/storage";
-import { buildProjectKnowledge } from "../analysis/pipeline";
+import { buildProjectKnowledge } from "@/lib/analysis/pipeline";
+import { setProjectProgress } from "@/lib/analysis/progress";
+import { generateProjectReport } from "@/lib/analysis/report";
+import { auth } from "@/lib/auth";
+import {
+    assertCanRunAnalysis,
+    BillingLimitError,
+    recordAnalysisUsage,
+} from "@/lib/billing/entitlements";
+import { prisma } from "@/lib/db";
+import { extractFromZipBuffer } from "@/lib/files/extract";
+import { isSourceFile } from "@/lib/files/filters";
+import { detectFramework } from "@/lib/files/framework";
+import { deleteProjectFiles, persistProjectFiles } from "@/lib/files/storage";
+import { downloadGitHubZipball } from "@/lib/github";
+import { MAX_REPO_SIZE_BYTES } from "@/lib/limits";
 import { revalidatePath } from "next/cache";
 import { isRedirectError } from "next/dist/client/components/redirect-error";
-import { generateProjectReport } from "../analysis/report";
+import { redirect } from "next/navigation";
 
 export type RetryState = {
     error?: string;
@@ -165,8 +170,11 @@ export async function retryFullAnalysis(
     }
 
     try {
+        await assertCanRunAnalysis(project.userId);
         // Pull fresh GitHub code when possible; ZIP projects reuse local files.
         await refreshProjectSources(project);
+
+        await recordAnalysisUsage(project.userId);
 
         await prisma.project.update({
             where: { id: project.id },
@@ -187,8 +195,12 @@ export async function retryFullAnalysis(
     } catch (error) {
         if (isRedirectError(error)) throw error;
 
+        if (error instanceof BillingLimitError) {
+            return { error: error.message };
+        }
+
         await setProjectProgress(project.id, {
-            step: "Re-Analyze Failed",
+            step: "Re-analyze failed",
             percent: project.progressPercent || 0,
             status: "failed",
             errorMessage:

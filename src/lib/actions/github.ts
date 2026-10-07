@@ -2,6 +2,10 @@
 
 import { redirect } from "next/navigation";
 import { auth, signIn } from "../auth";
+import {
+    assertCanCreateProject,
+    recordAnalysisUsage,
+} from "../billing/entitlements";
 import { prisma } from "../db";
 import { setProjectProgress } from "../analysis/progress";
 import { extractFromZipBuffer } from "../files/extract";
@@ -31,6 +35,10 @@ export async function connectGitHubAccount() {
     await signIn("github", { redirectTo: "/settings?github=connected" });
 }
 
+async function assertDailyLimit(userId: string) {
+    await assertCanCreateProject(userId);
+}
+
 /**
  * Ingest files only, then hand off to the progress page for live analysis.
  */
@@ -41,6 +49,8 @@ async function finalizeProjectFromZip(options: {
     repositoryUrl?: string;
     zipBuffer: Buffer;
 }) {
+    await assertDailyLimit(options.userId);
+
     const project = await prisma.project.create({
         data: {
             userId: options.userId,
@@ -53,9 +63,11 @@ async function finalizeProjectFromZip(options: {
         },
     });
 
+    await recordAnalysisUsage(options.userId);
+
     try {
         await setProjectProgress(project.id, {
-            step: "Reading files",
+            step: "Reading Files",
             percent: 15,
             status: "processing",
         });
@@ -91,14 +103,14 @@ async function finalizeProjectFromZip(options: {
         await persistProjectFiles(project.id, extracted.sourceFiles);
 
         await setProjectProgress(project.id, {
-            step: "Files ready for analysis",
+            step: "Files Ready For Analysis",
             percent: 25,
             status: "queued",
             framework,
             fileCount: sourceOnly.length,
             errorMessage:
                 extracted.skippedLargeFiles.length > 0
-                    ? `Skipped ${extracted.skippedLargeFiles.length} file(s) over the size limit.`
+                    ? `Skipped ${extracted.skippedLargeFiles.length} File(s) Over The Size Limit.`
                     : null,
         });
 
@@ -106,13 +118,13 @@ async function finalizeProjectFromZip(options: {
     } catch (error) {
         await deleteProjectFiles(project.id);
         await setProjectProgress(project.id, {
-            step: "Import failed",
+            step: "Import Failed",
             percent: 10,
             status: "failed",
             errorMessage:
                 error instanceof Error
                     ? error.message
-                    : "Project ingestion failed.",
+                    : "Project Ingestion Failed.",
         });
         return { projectId: project.id, failed: true as const };
     }
@@ -149,7 +161,7 @@ export async function createProjectFromGitHub(
     const defaultBranch = String(formData.get("defaultBranch") ?? "");
 
     if (!fullName.includes("/")) {
-        return { error: "Invalid repository selection." };
+        return { error: "Invalid Repository Selection." };
     }
 
     const dbUser = await prisma.user.findUnique({
@@ -159,7 +171,7 @@ export async function createProjectFromGitHub(
 
     if (!dbUser?.githubAccessToken) {
         return {
-            error: "Connect GitHub in Settings before selecting a repository.",
+            error: "Connect GitHub in Settings Before Selecting a Repository.",
         };
     }
 
