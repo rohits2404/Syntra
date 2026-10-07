@@ -1,10 +1,10 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-    /* config options here */
     typescript: {
         ignoreBuildErrors: true,
     },
+
     serverExternalPackages: [
         "tree-sitter",
         "tree-sitter-javascript",
@@ -13,10 +13,20 @@ const nextConfig: NextConfig = {
         "onnxruntime-node",
         "sharp",
     ],
+
     experimental: {
         serverActions: {
             bodySizeLimit: "110mb",
         },
+    },
+
+    webpack: (config) => {
+        config.experiments = {
+            ...config.experiments,
+            asyncWebAssembly: true,
+        };
+
+        return config;
     },
 };
 
